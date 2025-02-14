@@ -1,5 +1,7 @@
 from confluent_kafka import Producer
 import json
+from decimal import Decimal
+
 
 def do_sent_json_to_kafka(data):
      # Hàm callback xử lý lỗi (nếu có)
@@ -22,10 +24,13 @@ def do_sent_json_to_kafka(data):
     topic = 'test_input'
 
     # Serialize JSON thành chuỗi
-    json_data = json.dumps(data)
+    json_data = json.dumps(data, ensure_ascii=False, default=lambda x: float(x) if isinstance(x, Decimal) else x)
 
     # Gửi dữ liệu
     producer.produce(topic, key="test_key", value=json_data, callback=_delivery_report)
 
     # Đảm bảo tất cả dữ liệu được gửi trước khi thoát
     producer.flush()
+
+if __name__ == "__main__":
+    pass

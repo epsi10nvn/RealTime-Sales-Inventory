@@ -10,9 +10,7 @@ import os
 import shutil
 import math
 from decimal import Decimal
-
-# from ..query_helper.query_sp import *
-from spark_kafka_streaming_purchase.sent_json_to_kafka import do_sent_json_to_kafka
+from utils.sent_json_to_kafka import do_sent_json_to_kafka
 
 CUSTOMERS = [
     {"customer_id": "C001", "customer_full_name": "John Smith"},
@@ -75,7 +73,7 @@ def generate_invoice(inventory_df):
     for item in purchased_items:
         max_quantity = item["quantity"]
         if max_quantity > 0:
-            purchase_quantity = min(random.randint(1, 10), max_quantity)  # Số lượng mua nhỏ hơn số lượng tồn kho
+            purchase_quantity = min(random.randint(1, 6), max_quantity)  # Số lượng mua nhỏ hơn số lượng tồn kho
             total_price = purchase_quantity * item["sale_prices"]
             valid_items.append({
                 "product_id": item["product_id"],
