@@ -31,6 +31,8 @@ query_select_current_inventory = """
     ) AS latest_inventory
 """
 
+latest_time_id_dim_query = "(SELECT MAX(id) FROM time_dim) AS latest_time"
+
 # items_df = batch_df.select(
 #         col("product_id"),
 #         col("product_name"),
@@ -76,7 +78,7 @@ def update_inventory(inventory_df, items_df):
 #         col("item.price").alias("price"),
 #         col("item.total_price").alias("total_price")
         
-def write_invoices_and_items(batch_df, batch_id):
+def write_update_inventory(batch_df, batch_id):
     # Tách line_item thành bảng import_items
     items_df = batch_df.select(
         col("product_id"),
@@ -104,7 +106,93 @@ def write_invoices_and_items(batch_df, batch_id):
         # mode="overwrite",
         properties=db_properties
     )
+
+def write_update_datawarehouse_dim(batch_df, batch_id):
+    product_dim_df = batch_df.select(
+        col("product_id").alias("product_id"),
+        col("product_name").alias("product_name")
+    ).distinct()
     
+    customer_dim_df = batch_df.select(
+        col("customer_id").alias("customer_id"),
+        col("customer_name").alias("customer_name")
+    ).distinct()
+    
+    time_dim_df = batch_df.select(
+        col("timestamp").alias("date"),
+        year("timestamp").alias("year"),
+        month("timestamp").alias("month"),
+        dayofmonth("timestamp").alias("day"),
+        hour("timestamp").alias("hour"),
+        minute("timestamp").alias("minute"),
+        dayofweek("timestamp").alias("weekday")
+    ).distinct()
+    
+    # Doc du lieu da co trong bang dim
+    existing_product_df = spark.read.jdbc(
+        url=jdbc_url,
+        table="product_dim",
+        properties=db_properties
+    )
+    
+    existing_customer_df = spark.read.jdbc(
+        url=jdbc_url,
+        table="customer_dim",
+        properties=db_properties
+    )
+    
+    new_product_dim_df = product_dim_df.join(existing_product_df, ["product_id"], "left_anti")
+
+    new_customer_dim_df = customer_dim_df.join(existing_customer_df, ["customer_id"], "left_anti")
+
+    new_product_dim_df.write.jdbc(
+        url=jdbc_url,
+        table="product_dim",
+        mode="append",
+        properties=db_properties
+    )
+    
+    new_customer_dim_df.write.jdbc(
+        url=jdbc_url,
+        table="customer_dim",
+        mode="append",
+        properties=db_properties
+    )
+    
+    time_dim_df.write.jdbc(
+        url=jdbc_url,
+        table="time_dim",
+        mode="append",
+        properties=db_properties
+    )
+    
+def write_update_datawarehouse_fact(batch_df, batch_id):
+    # Doc du lieu da co trong bang dim
+    latest_time_df = spark.read.jdbc(
+        url=jdbc_url,
+        table=latest_time_id_dim_query,
+        properties=db_properties
+    )
+
+    latest_time_id = latest_time_df.collect()[0][0]
+    
+    # Select columns for sales_fact
+    sales_fact_df = batch_df.select(
+        col("product_id"),
+        col("customer_id"),
+        col("quantity"),
+        col("price").alias("sale_prices"),
+        col("total_price").alias("total_amount")
+    ).withColumn("time_id", lit(latest_time_id))
+    
+    sales_fact_df.write.jdbc(
+        url=jdbc_url,
+        table="sales_fact",
+        mode="append",
+        properties=db_properties
+    )
+
+
 def convert_data_types(df):
     # Chuyển đổi kiểu dữ liệu
     df = df.withColumn("timestamp", col("timestamp").cast(TimestampType()))
@@ -175,9 +263,28 @@ if __name__ == "__main__":
     '''
     # Áp dụng hàm write_invoices_and_items
     df_converted.writeStream \
-        .foreachBatch(write_invoices_and_items) \
-        .queryName("Invoices and Items Writer") \
-        .option("checkpointLocation", "chk-point-dir-items-purchase") \
+        .foreachBatch(write_update_inventory) \
+        .queryName("Update inventory writer") \
+        .option("checkpointLocation", "chk-point-dir-purchase-database-update") \
+        .start()
+        
+    '''
+    Update datawarehouse dim
+    '''
+    df_converted.writeStream \
+        .foreachBatch(write_update_datawarehouse_dim) \
+        .queryName("Update dw dim writer") \
+        .option("checkpointLocation", "chk-point-dir-datawarehouse-update-dim") \
+        .start()
+    
+    '''
+    Update datawarehouse fact
+    '''
+    # write_update_datawarehouse_fact
+    df_converted.writeStream \
+        .foreachBatch(write_update_datawarehouse_fact) \
+        .queryName("Update dw fact writer") \
+        .option("checkpointLocation", "chk-point-dir-datawarehouse-update-fact") \
         .start()
 
     kafka_target_df = processed_df.selectExpr(
@@ -197,7 +304,7 @@ if __name__ == "__main__":
     # In dữ liệu ra console
     notification_writer_query = kafka_target_df.writeStream \
         .format("kafka") \
-        .queryName("Notification Writer") \
+        .queryName("Notification Writer 1") \
         .option("kafka.bootstrap.servers", "localhost:9092") \
         .option("topic", "test_notify") \
         .outputMode("append") \

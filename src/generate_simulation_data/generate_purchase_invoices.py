@@ -144,14 +144,14 @@ def main():
         print(f"Generated Invoice: {invoice}")
         
         # Write the invoice to the JSON file
-        write_invoice_to_file(invoice, f"././input/kafka_purchase/{purchase_id}.json")
+        # write_invoice_to_file(invoice, f"././input/kafka_purchase/{purchase_id}.json")
         
         source = INPUT_PATH + f'/{str(purchase_id)}.json'
         des = BACKUP_PATH + f'/{str(purchase_id)}.json'
-        copy_file(source, des)
+        # copy_file(source, des)
         
         purchase_id += 1
-        time.sleep(10)  # 3600 seconds = 1 hour
+        time.sleep(15)  # 3600 seconds = 1 hour
 
 if __name__ == "__main__":
     spark = SparkSession \

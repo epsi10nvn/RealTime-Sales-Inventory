@@ -11,3 +11,17 @@ query_select_current_inventory = """
     ) AS latest_inventory
 """
 
+"""
+DROP TABLE inventory;
+DROP TABLE import_items;
+DROP TABLE import_invoices;
+DROP TABLE product_dim CASCADE;
+DROP TABLE customer_dim CASCADE;
+DROP TABLE time_dim CASCADE;
+DROP TABLE sales_fact;
+
+
+TRUNCATE TABLE time_dim CASCADE;
+TRUNCATE TABLE product_dim CASCADE;
+TRUNCATE TABLE customer_dim CASCADE;
+"""

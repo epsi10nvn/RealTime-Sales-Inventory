@@ -86,6 +86,58 @@ def create_table():
                 );
             """)
             print("Đã tạo bảng inventory.")
+            
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS product_dim (
+                    product_id VARCHAR(10) NOT NULL,
+                    product_name VARCHAR(100) NOT NULL,
+                    
+                    PRIMARY KEY (product_id)
+                );
+            """)
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS customer_dim (
+                    customer_id VARCHAR(10) NOT NULL,
+                    customer_name VARCHAR(100) NOT NULL,
+                    
+                    PRIMARY KEY (customer_id)
+                );
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS time_dim (
+                    id SERIAL PRIMARY KEY,
+                    date DATE NOT NULL,
+                    year INT NOT NULL,
+                    month INT NOT NULL,
+                    day INT NOT NULL,
+                    hour INT NOT NULL,
+                    minute INT NOT NULL,
+                    weekday INT NOT NULL
+                );
+            """)
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS sales_fact (
+                    product_id VARCHAR(10) NOT NULL,
+                    customer_id VARCHAR(10) NOT NULL,
+                    time_id INT NOT NULL,
+                    sale_id SERIAL,
+                    quantity INT NOT NULL,
+                    sale_prices DECIMAL(15, 2) NOT NULL,
+                    total_amount DECIMAL(15, 2) NOT NULL,
+                    
+                    PRIMARY KEY (product_id, customer_id, time_id, sale_id),
+                    CONSTRAINT fk_product FOREIGN KEY (product_id) REFERENCES product_dim(product_id)
+                        ON DELETE CASCADE,
+                    CONSTRAINT fk_customer FOREIGN KEY (customer_id) REFERENCES customer_dim(customer_id)
+                        ON DELETE CASCADE,
+                    CONSTRAINT fk_time FOREIGN KEY (time_id) REFERENCES time_dim(id)
+                        ON DELETE CASCADE
+                );
+            """)
+            print("Đã tạo bảng cho datawarehouse chính.")
         except Exception as e:
             print("Lỗi khi tạo bảng:", e)
         finally:
