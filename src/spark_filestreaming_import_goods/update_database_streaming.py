@@ -41,7 +41,7 @@ def update_inventory(inventory_df, items_df):
     if inventory_df.isEmpty():
         update_df = items_df.select(
             f.col("product_id"),
-            f.col("product_name"),
+            f.col("product_name"),                     
             f.col("quantity"), 
             (f.col("price") * 1.2).alias("sale_prices"),
             f.lit(50).alias("reorder_level"),

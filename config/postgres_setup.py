@@ -114,6 +114,7 @@ def create_table():
                     day INT NOT NULL,
                     hour INT NOT NULL,
                     minute INT NOT NULL,
+                    second INT NOT NULL,
                     weekday INT NOT NULL
                 );
             """)

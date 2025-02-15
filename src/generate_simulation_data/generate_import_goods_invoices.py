@@ -25,8 +25,8 @@ BACKUP_PATH = "./input/backup/import"
 def generate_item(item_pool):
     item = random.choice(item_pool)
     
-    # quantity = random.randint(2, 4)
-    quantity = 5
+    quantity = random.randint(50, 100)
+    # quantity = 5
     
     total_amount = quantity * item["price"]
     
@@ -84,8 +84,11 @@ def main():
     
     while True:
         # Number of items per invoice (random between 3 and 7)
-        # num_items = random.randint(3, 5)
-        num_items = 10
+        if import_id == 0:
+            num_items = 10
+        else:
+            num_items = random.randint(3, 6)
+        # num_items = 10
         
         invoice = generate_invoice(import_id, num_items)
         
@@ -100,7 +103,7 @@ def main():
         copy_file(source, des)
         
         import_id += 1
-        time.sleep(30)  # 3600 seconds = 1 hour
+        time.sleep(120)  # 3600 seconds = 1 hour
 
 if __name__ == "__main__":
     main()

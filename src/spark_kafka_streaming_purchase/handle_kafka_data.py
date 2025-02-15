@@ -106,6 +106,32 @@ def write_update_inventory(batch_df, batch_id):
         # mode="overwrite",
         properties=db_properties
     )
+    
+def write_update_datawarehouse_fact(batch_df, batch_id):
+    # Doc du lieu da co trong bang dim
+    latest_time_df = spark.read.jdbc(
+        url=jdbc_url,
+        table=latest_time_id_dim_query,
+        properties=db_properties
+    )
+
+    latest_time_id = latest_time_df.collect()[0][0]
+    
+    # Select columns for sales_fact
+    sales_fact_df = batch_df.select(
+        col("product_id"),
+        col("customer_id"),
+        col("quantity"),
+        col("price").alias("sale_prices"),
+        col("total_price").alias("total_amount")
+    ).withColumn("time_id", lit(latest_time_id))
+    
+    sales_fact_df.write.jdbc(
+        url=jdbc_url,
+        table="sales_fact",
+        mode="append",
+        properties=db_properties
+    )
 
 def write_update_datawarehouse_dim(batch_df, batch_id):
     product_dim_df = batch_df.select(
@@ -125,6 +151,7 @@ def write_update_datawarehouse_dim(batch_df, batch_id):
         dayofmonth("timestamp").alias("day"),
         hour("timestamp").alias("hour"),
         minute("timestamp").alias("minute"),
+        second("timestamp").alias("second"),
         dayofweek("timestamp").alias("weekday")
     ).distinct()
     
@@ -166,7 +193,9 @@ def write_update_datawarehouse_dim(batch_df, batch_id):
         properties=db_properties
     )
     
-def write_update_datawarehouse_fact(batch_df, batch_id):
+    '''
+    Update datawarehouse fact
+    '''
     # Doc du lieu da co trong bang dim
     latest_time_df = spark.read.jdbc(
         url=jdbc_url,
@@ -191,7 +220,7 @@ def write_update_datawarehouse_fact(batch_df, batch_id):
         mode="append",
         properties=db_properties
     )
-
+    
 
 def convert_data_types(df):
     # Chuyển đổi kiểu dữ liệu
@@ -277,15 +306,7 @@ if __name__ == "__main__":
         .option("checkpointLocation", "chk-point-dir-datawarehouse-update-dim") \
         .start()
     
-    '''
-    Update datawarehouse fact
-    '''
-    # write_update_datawarehouse_fact
-    df_converted.writeStream \
-        .foreachBatch(write_update_datawarehouse_fact) \
-        .queryName("Update dw fact writer") \
-        .option("checkpointLocation", "chk-point-dir-datawarehouse-update-fact") \
-        .start()
+    
 
     kafka_target_df = processed_df.selectExpr(
         """to_json(named_struct(

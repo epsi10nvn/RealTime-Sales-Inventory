@@ -64,7 +64,7 @@ def generate_invoice(inventory_df):
     customer_name = customer["customer_full_name"]
 
     # Chọn ngẫu nhiên số lượng sản phẩm mua
-    num_items = random.randint(1, 3)
+    num_items = random.randint(3, 5)
     available_products = inventory_df.collect()
     purchased_items = random.sample(available_products, min(num_items, len(available_products)))
 
@@ -144,14 +144,16 @@ def main():
         print(f"Generated Invoice: {invoice}")
         
         # Write the invoice to the JSON file
-        # write_invoice_to_file(invoice, f"././input/kafka_purchase/{purchase_id}.json")
+        write_invoice_to_file(invoice, f"././input/kafka_purchase/{purchase_id}.json")
         
         source = INPUT_PATH + f'/{str(purchase_id)}.json'
         des = BACKUP_PATH + f'/{str(purchase_id)}.json'
-        # copy_file(source, des)
+        copy_file(source, des)
         
         purchase_id += 1
-        time.sleep(15)  # 3600 seconds = 1 hour
+        
+        time_sleep_random = random.randint(3, 10)
+        time.sleep(time_sleep_random)  # 3600 seconds = 1 hour
 
 if __name__ == "__main__":
     spark = SparkSession \
