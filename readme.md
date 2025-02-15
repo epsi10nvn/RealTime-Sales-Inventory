@@ -1,8 +1,9 @@
-# Real-Time Retail Data Warehouse
+# Real-Time Retail Stream Warehouse
 
 ## 📌 Introduction
 
 This project simulates a **data warehouse** system for a retail store, processing **real-time** purchase data from Kafka and storing it in PostgreSQL. The system supports sales data analysis, inventory control, and visual reporting.
+![flow](./images/image.png)
 
 ## 🚀 Features
 

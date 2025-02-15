@@ -42,7 +42,7 @@ latest_time_id_dim_query = "(SELECT MAX(id) FROM time_dim) AS latest_time"
 #     )
 
 def update_inventory(inventory_df, items_df):
-    if inventory_df.isEmpty():
+    if inventory_df.isEmpty():                     
         update_df = items_df.select(
             col("product_id"),
             col("product_name"),
