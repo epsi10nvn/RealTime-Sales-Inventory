@@ -22,7 +22,7 @@ The system uses a **star schema** with the following tables:
   - `customer_dim` (customer information)
   - `time_dim` (purchase time)
 
-## 📂 Cấu trúc thư mục
+## 📂 Folder Structure
 
 ```
 ├── analysis                        # Data analysis and visualization scripts
